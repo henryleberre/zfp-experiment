@@ -3,6 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
 PROJECT(Experiment LANGUAGES Fortran)
 
 INCLUDE(GNUInstallDirs)
+INCLUDE(ExternalProject)
 
 FIND_PACKAGE(MPI REQUIRED COMPONENTS Fortran)
 
@@ -12,5 +13,16 @@ LINK_DIRECTORIES(${MPI_Fortran_LIBRARIES})
 LINK_LIBRARIES(${MPI_Fortran_LIBRARIES})
 ADD_LINK_OPTIONS("-acc")
 LIST(APPEND CMAKE_EXE_LINKER_FLAGS ${MPI_Fortran_LINK_FLAGS})
+
+# ZFP
+ExternalProject_Add(zfp
+    GIT_REPOSITORY "https://github.com/LLNL/zfp"
+    GIT_TAG        980155a8e83bd6dabbcc600a4059df4d54521bfe
+    CMAKE_ARGS     -DZFP_WITH_CUDA=ON
+                   -DZFP_WITH_OPENMP=OFF
+                   -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+                   -DCMAKE_C_COMPILER=nvc
+                   -DCMAKE_CXX_COMPILER=nvc++
+)
 
 ADD_EXECUTABLE(zfp_experiment "main.f90")
