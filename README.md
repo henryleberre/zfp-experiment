@@ -9,6 +9,8 @@ $ ./run.sh
 
 - The only Fortran code example: [here](https://github.com/LLNL/zfp/blob/develop/tests/fortran/testFortran.f)
 
+- ZFP's Fortran interface: [source](https://github.com/LLNL/zfp/blob/develop/fortran/zfp.f90).
+
 - [ZFP Tutorial](https://zfp.readthedocs.io/en/latest/tutorial.html)
 
 - [CUDA Execution Policy](https://zfp.readthedocs.io/en/release0.5.5/execution.html):

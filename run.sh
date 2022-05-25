@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -o xtrace
+
 mkdir -p build
 cd build
 
