@@ -5,7 +5,8 @@ set -o xtrace
 mkdir -p build
 cd build
 
-CC=mpicc CXX=mpicxx FC=mpif90 cmake ..
+cmake ..
+
 make -j 8
 
 time ./zfp_experiment

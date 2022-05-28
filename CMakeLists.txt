@@ -8,21 +8,10 @@ INCLUDE(ExternalProject)
 FIND_PACKAGE(MPI REQUIRED COMPONENTS Fortran)
 
 ADD_DEFINITIONS(${MPI_Fortran_COMPILE_FLAGS} " -acc -O3 -Minfo")
-INCLUDE_DIRECTORIES(${MPI_Fortran_INCLUDE_DIRS})
-LINK_DIRECTORIES(${MPI_Fortran_LIBRARIES})
-LINK_LIBRARIES(${MPI_Fortran_LIBRARIES})
+INCLUDE_DIRECTORIES(${MPI_Fortran_INCLUDE_DIRS} "${CMAKE_SOURCE_DIR}/zfp/build/modules/")
+LINK_DIRECTORIES(${MPI_Fortran_LIBRARIES} "${CMAKE_SOURCE_DIR}/zfp/build/lib/")
+LINK_LIBRARIES(${MPI_Fortran_LIBRARIES} "libzFORp.so")
 ADD_LINK_OPTIONS("-acc")
 LIST(APPEND CMAKE_EXE_LINKER_FLAGS ${MPI_Fortran_LINK_FLAGS})
-
-# ZFP
-ExternalProject_Add(zfp
-    GIT_REPOSITORY "https://github.com/LLNL/zfp"
-    GIT_TAG        980155a8e83bd6dabbcc600a4059df4d54521bfe
-    CMAKE_ARGS     -DZFP_WITH_CUDA=ON
-                   -DZFP_WITH_OPENMP=OFF
-                   -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-                   -DCMAKE_C_COMPILER=nvc
-                   -DCMAKE_CXX_COMPILER=nvc++
-)
 
 ADD_EXECUTABLE(zfp_experiment "main.f90")
