@@ -5,6 +5,13 @@ $ chmod +x run.sh
 $ ./run.sh
 ```
 
+## Building ZFP
+
+```
+$ cmake .. -DZFP_WITH_CUDA=ON -DBUILD_ZFORP=ON -DBUILD_TESTING=OFF -DBUILD_UTILITIES=OFF -DZFP_WITH_OPENMP=OFF -DCUDA_NVCC_EXECUTABLE="$(which nvcc)" -DCMAKE_Fortran_FLAGS="-Mfree" -DCMAKE_CUDA_HOST_COMPILER="$(which nvc++)" -DCMAKE_CUDA_FLAGS="--compiler-bindir \"$(which nvc++)\"" -DCMAKE_INSTALL_PREFIX="$(pwd)"
+$ cmake --build . --config Release
+```
+
 ## References and Excerpts
 
 - The only Fortran code example: [here](https://github.com/LLNL/zfp/blob/develop/tests/fortran/testFortran.f)
