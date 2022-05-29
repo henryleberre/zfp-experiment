@@ -1,0 +1,62 @@
+bash-4.4$ bash cpp.sh 
+ -> Compressing 125000000 doubles (1000000000 bytes).
+    - Compressed size:  <= 1058593776 bytes (132324222 items eq.).
+    - Compressed tol.:  0.0000001000 (max relative error*).
+    - Compressed size:  488287440 bytes (61035930 items eq.)
+    - Compressed ratio: 2.05x
+    - Compression Time: 3.3346998340s
+ -> Decompressing 125000000 doubles (1000000000 bytes).
+    - Decompression Time: 2.9280718110s
+bash-4.4$ vim main.cpp 
+bash-4.4$ bash cpp.sh 
+ -> Compressing 125000000 doubles (1000000000 bytes).
+    - Compressed size:  <= 1058593776 bytes (132324222 items eq.).
+    - Compressed tol.:  0.0000100000 (max relative error*).
+    - Compressed size:  378913688 bytes (47364211 items eq.)
+    - Compressed ratio: 2.64x
+    - Compression Time: 2.5723326190s
+ -> Decompressing 125000000 doubles (1000000000 bytes).
+    - Decompression Time: 2.6213626080s
+bash-4.4$ vim main.cpp 
+bash-4.4$ bash cpp.sh 
+ -> Compressing 125000000 doubles (1000000000 bytes).
+    - Compressed size:  <= 1058593776 bytes (132324222 items eq.).
+    - Compressed tol.:  0.0010000000 (max relative error*).
+    - Compressed size:  269539920 bytes (33692490 items eq.)
+    - Compressed ratio: 3.71x
+    - Compression Time: 2.1136772900s
+ -> Decompressing 125000000 doubles (1000000000 bytes).
+    - Decompression Time: 2.2680266600s
+bash-4.4$ vim main.cpp 
+bash-4.4$ bash cpp.sh 
+ -> Compressing 125000000 doubles (1000000000 bytes).
+    - Compressed size:  <= 1058593776 bytes (132324222 items eq.).
+    - Compressed tol.:  0.0100000000 (max relative error*).
+    - Compressed size:  222665440 bytes (27833180 items eq.)
+    - Compressed ratio: 4.49x
+    - Compression Time: 1.9360352920s
+ -> Decompressing 125000000 doubles (1000000000 bytes).
+    - Decompression Time: 2.1518111010s
+bash-4.4$ vim main.cpp 
+bash-4.4$ bash cpp.sh 
+ -> Compressing 125000000 doubles (1000000000 bytes).
+    - Compressed size:  <= 1058593776 bytes (132324222 items eq.).
+    - Compressed tol.:  0.0000000001 (max relative error*).
+    - Compressed size:  644535656 bytes (80566957 items eq.)
+    - Compressed ratio: 1.55x
+    - Compression Time: 3.8810431050s
+ -> Decompressing 125000000 doubles (1000000000 bytes).
+    - Decompression Time: 3.5468578650s
+bash-4.4$ bash cpp.sh 
+ -> Compressing 12500 doubles (100000 bytes).
+    - Compressed size:  <= 105880 bytes (13235 items eq.).
+    - Compressed tol.:  0.1000000000 (max relative error*).
+    - Cuda engine available. Activated.
+    -> Fatal error: Failed to compress.
+    - Compressed size:  0 bytes (0 items eq.)
+    - Compressed ratio: infx
+    - Compression Time: 0.0000032800s
+ -> Decompressing 12500 doubles (100000 bytes).
+    - Decompression Time: 0.0000016700s
+
+
