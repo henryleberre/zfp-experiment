@@ -17,9 +17,10 @@ program main
     integer :: t1, t2
 
     ! ZFP test arrays & settings
-    integer (kind=8) :: i = 1, LEN = 100000
+    integer (kind=8) :: i = 1, LEN = 100
     real*8 :: accuracy = 1e-2
     real*8, dimension(:), target, allocatable :: original
+    real*8, dimension(:),         allocatable :: original_saved
     byte,   dimension(:), target, allocatable :: compressed
     type(c_ptr) :: pOriginal, pCompressed
     integer (kind=8) :: MAX_SIZE_compressed, SIZE_compressed, SIZE_decompressed
@@ -47,6 +48,7 @@ program main
 
     ! Create & Insert data into the buffer to be compressed
     allocate(original(LEN))
+    allocate(original_saved(LEN))
 
     call system_clock(t1)
         original(1)=0
@@ -59,6 +61,12 @@ program main
     elapsed = (t2-t1) / rate
 
     print '("   - Took "D"s to fill the original array of size "I0" bytes ("I0" items).")', elapsed, LEN*8, LEN
+
+    print '("   - Saving a copy of the array...")'
+
+    do i = 1, LEN
+        original_saved(i)=original(i)
+    end do
 
     print '(" - [COMPRESSION]")'
 
@@ -81,6 +89,8 @@ program main
 
     !!$acc data copy(original)
 
+    call zFORp_stream_rewind(stream)
+
     call system_clock(t1)
         SIZE_compressed = zFORp_compress(stream, field)
     call system_clock(t2)
@@ -93,6 +103,11 @@ program main
     print '("   - Effective compression ratio of "D"")', compression_ratio
 
     print '(" - [DECOMPRESSION]")'
+    print '("   - Clearing the original array")'
+    do i = 1, LEN
+        original(i)=0
+    end do
+
     call zFORp_stream_rewind(stream)
 
     call system_clock(t1)
@@ -104,10 +119,14 @@ program main
     print '("   - Took "D"s to decompress to "I0" bytes ("I0" items).")', elapsed, SIZE_decompressed, SIZE_decompressed / 8
 
     print '(" - [CHECK INTEGRITY]")'
+    print '("   - Compression and decompression were successful.")'
+    print '("   - Error:")'
 
-    if (LEN*8 .ne. SIZE_decompressed) then
+    if (SIZE_compressed .ne. SIZE_decompressed) then
         print *, "  - Fatal error: The input array and decompressed arrays have different lengths."
     end if
+
+    PRINT *, original - original_saved
 
     !zfp_stream_set_execution()
     !zfp_stream_open(NULL);
