@@ -17,7 +17,7 @@ program main
     integer :: t1, t2
 
     ! ZFP test arrays & settings
-    integer (kind=8) :: i = 1, LEN = 100
+    integer (kind=8) :: i = 1, j = 1, LEN = 100
     real*8 :: accuracy = 1e-2
     real*8, dimension(:), target, allocatable :: original
     byte,   dimension(:), target, allocatable :: compressed
@@ -25,7 +25,8 @@ program main
     type(c_ptr) :: pOriginal, pCompressed, pUncompressed
     integer (kind=8) :: MAX_SIZE_compressed, SIZE_compressed
     integer(c_size_t) :: stream_offset
-    real*8 :: res, compression_ratio
+    real*8 :: compression_ratio
+    integer :: res
 
     integer(c_int), dimension(3) :: POLICIES = (/ zFORp_exec_serial, zFORp_exec_omp, zFORp_exec_cuda /)
 
@@ -56,8 +57,8 @@ program main
 
         original(1)=0
         original(2)=1
-        do i = 3, LEN
-            original(i)=original(i-1)+original(i-2)
+        do j = 3, LEN
+            original(j)=original(j-1)+original(j-2)
         end do
     call system_clock(t2)
 
@@ -65,60 +66,74 @@ program main
 
     print '(" [INIT] Generated the original array of size "I0" bytes ("I0" items)  in "D"s .")', LEN*8, LEN, elapsed
 
-    pOriginal = c_loc(original)
-    field = zFORp_field_1d(pOriginal, zFORp_type_double, INT(LEN))
 
-    !bitstream%object = c_null_ptr
-    stream = zFORp_stream_open(bitstream)
-    res    = zFORp_stream_set_accuracy(stream, accuracy)
-    MAX_SIZE_compressed = zFORp_stream_maximum_size(stream, field)
+    do i = 1, size(POLICIES)
 
-    ! Create Bistream & Allocate Bistream buffer
-    allocate(compressed(MAX_SIZE_compressed))
-    pCompressed = c_loc(compressed)
+        !bitstream%object = c_null_ptr
+        stream = zFORp_stream_open(bitstream)
+        pOriginal = c_loc(original)
+        field = zFORp_field_1d(pOriginal, zFORp_type_double, INT(LEN))
 
-    bitstream = zFORp_bitstream_stream_open(pCompressed, MAX_SIZE_compressed)
-    call zFORp_stream_set_bit_stream(stream, bitstream)
+        if (zFORp_stream_set_execution(stream, POLICIES(i)) .eq. 0) then
+            print '(" [INIT] ZFP Execution Policy "I0" Unsupported.")', POLICIES(i)
+            cycle
+        end if
 
-    !!$acc data copy(original)
+        res    = zFORp_stream_set_accuracy(stream, accuracy)
+        MAX_SIZE_compressed = zFORp_stream_maximum_size(stream, field)
 
-    call zFORp_stream_rewind(stream)
+        ! Create Bistream & Allocate Bistream buffer
+        allocate(compressed(MAX_SIZE_compressed))
+        pCompressed = c_loc(compressed)
 
-    call system_clock(t1)
-        stream_offset   = zFORp_compress(stream, field)
-        SIZE_compressed = stream_offset
-    call system_clock(t2)
+        bitstream = zFORp_bitstream_stream_open(pCompressed, MAX_SIZE_compressed)
+        call zFORp_stream_set_bit_stream(stream, bitstream)
 
-    elapsed = t2 - t1
+        !!$acc data copy(original)
 
-    print '(" [ZFPE] Compressed to "I0" bytes ("I0" items eq.) in "D"s.")', SIZE_compressed, SIZE_compressed / 8, elapsed
+        call zFORp_stream_rewind(stream)
 
-    compression_ratio = (LEN*8) / SIZE_compressed
-    print '(" [ZFPE] Effective compression ratio of "D"")', compression_ratio
+        call system_clock(t1)
+            stream_offset   = zFORp_compress(stream, field)
+            SIZE_compressed = stream_offset
+        call system_clock(t2)
 
-    allocate(uncompressed(LEN))
-    pUncompressed = c_loc(uncompressed)
+        elapsed = t2 - t1
 
-    field = zFORp_field_1d(pUncompressed, zFORp_type_double, INT(LEN))
+        print '(" [ZFPE] Compressed to "I0" bytes ("I0" items eq.) in "D"s.")', SIZE_compressed, SIZE_compressed / 8, elapsed
 
-    call zFORp_stream_rewind(stream)
+        compression_ratio = (LEN*8) / SIZE_compressed
+        print '(" [ZFPE] Effective compression ratio of "D"")', compression_ratio
 
-    call system_clock(t1)
-        stream_offset = zFORp_decompress(stream, field)
-    call system_clock(t2)
+        allocate(uncompressed(LEN))
+        pUncompressed = c_loc(uncompressed)
 
-    elapsed = t2 - t1
+        field = zFORp_field_1d(pUncompressed, zFORp_type_double, INT(LEN))
 
-    print '(" [ZFPD] Decompressed to "I0" bytes ("I0" items) in "D"s.")', LEN*8, LEN, elapsed
+        call zFORp_stream_rewind(stream)
 
-    if (SIZE_compressed .ne. stream_offset) then
-        print '(" [INTE] Failure during .")'
-        stop 1
-    end if
+        call system_clock(t1)
+            stream_offset = zFORp_decompress(stream, field)
+        call system_clock(t2)
 
-    print '(" [INTE] Success.")'
+        elapsed = t2 - t1
 
-    PRINT *, original - uncompressed
+        print '(" [ZFPD] Decompressed to "I0" bytes ("I0" items) in "D"s.")', LEN*8, LEN, elapsed
+
+        if (SIZE_compressed .ne. stream_offset) then
+            print '(" [INTE] Failure during .")'
+            stop 1
+        end if
+
+        print '(" [INTE] Success.")'
+
+        PRINT *, original - uncompressed
+
+        deallocate(compressed)
+        deallocate(uncompressed)
+    end do
+
+    deallocate(original)
 
     !zfp_stream_set_execution()
     !zfp_stream_open(NULL);
