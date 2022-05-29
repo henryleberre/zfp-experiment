@@ -1,6 +1,7 @@
 
 #include <cmath>
 #include <array>
+#include <string>
 #include <chrono>
 #include <cstdio>
 #include <random>
@@ -12,13 +13,7 @@
 
 #define BENCH
 
-int main(int argc, char** argv) {
-    
-    FILE* fp = std::fopen("omp.dat", "w");
-
-    std::uniform_real_distribution<double> unif(0,1);
-    std::default_random_engine re;
-
+void test_engine() {
     for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e8; LEN*=10) {
         printf("%s LEN %d\n", "omp.dat", LEN);
         for (double ACC = 1e-1; ACC > 1e-10; ACC /= 10) {
@@ -38,7 +33,7 @@ int main(int argc, char** argv) {
             const std::uint32_t MAX_SIZE_compressed = zfp_stream_maximum_size(stream, field);
 
             double * const pCompressed = (double*)std::malloc(MAX_SIZE_compressed);
-            
+
             bitstream* bits = stream_open(pCompressed, MAX_SIZE_compressed);
 
             zfp_stream_set_bit_stream(stream, bits);
@@ -51,7 +46,7 @@ int main(int argc, char** argv) {
 
             auto t1 = std::chrono::high_resolution_clock::now();
 
-            std::size_t zfpsize = zfp_compress(stream, field); 
+            std::size_t zfpsize = zfp_compress(stream, field);
 
             auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -59,13 +54,23 @@ int main(int argc, char** argv) {
                 std::printf("    -> Fatal error: Failed to compress.\n");
                 return -1;
             }
-            
+
             const double elapsed =  std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1).count();
             std::fprintf(fp, "%d, %.10f, %.10f, %.10f\n", LEN, ACC, elapsed, original_size / (float)zfpsize);
         }
     }
 
     std::fclose(fp);
+}
+
+int main(int argc, char** argv) {
+
+    FILE* fp = std::fopen("omp.dat", "w");
+
+    std::uniform_real_distribution<double> unif(0,1);
+    std::default_random_engine re;
+
+
 
     return 0;
 

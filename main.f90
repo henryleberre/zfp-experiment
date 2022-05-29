@@ -20,37 +20,40 @@ program main
     integer (kind=8) :: i = 1, LEN = 100
     real*8 :: accuracy = 1e-2
     real*8, dimension(:), target, allocatable :: original
-    real*8, dimension(:),         allocatable :: original_saved
     byte,   dimension(:), target, allocatable :: compressed
-    type(c_ptr) :: pOriginal, pCompressed
-    integer (kind=8) :: MAX_SIZE_compressed, SIZE_compressed, SIZE_decompressed
+    real*8, dimension(:), target, allocatable :: uncompressed
+    type(c_ptr) :: pOriginal, pCompressed, pUncompressed
+    integer (kind=8) :: MAX_SIZE_compressed, SIZE_compressed
+    integer(c_size_t) :: stream_offset
     real*8 :: res, compression_ratio
+
+    integer(c_int), dimension(3) :: POLICIES = (/ zFORp_exec_serial, zFORp_exec_omp, zFORp_exec_cuda /)
 
     ! ZFP datatypes
     type(zFORp_field)     :: field     ! Field to describe the region to be compressed
     type(zFORp_stream)    :: stream    ! Stream used to compress data (holds compression params)
-    type(zFORp_bitstream) :: bitstream ! Bitstream to handle compression I/O
+    type(zFORp_bitstream) :: bitstream ! Bitstream to handle (de)compression I/O
 
-    print *, "- [ZFP Experiment] @ Henry A. Le Berre"
+    print '("[ZFP Experiment] @ Henry A. Le Berre")'
 
     ! Initialize OpenACC
     devtype = acc_get_device_type()
     devNum  = acc_get_num_devices(devtype)
 
-    print '(" - [INIT]")'
-    print '("   - OpenACC Device "I0" (/"I0")")', 0, devNum
+    call acc_set_device_num(0, devtype)
 
-    call acc_set_device_num(0, devtype)   
+    print '(" [INIT] Bound OpenACC Device "I0" (/"I0")")', 0, devNum
 
     ! Intialize Timing
-    call system_clock(COUNT_RATE=cr, COUNT_MAX=cm) 
+    call system_clock(COUNT_RATE=cr, COUNT_MAX=cm)
     rate = real(cr)
 
-    ! Create & Insert data into the buffer to be compressed
-    allocate(original(LEN))
-    allocate(original_saved(LEN))
+    print '(" [INIT] Initialized System Clock.")'
 
+    ! Create & Insert data into the buffer to be compressed
     call system_clock(t1)
+        allocate(original(LEN))
+
         original(1)=0
         original(2)=1
         do i = 3, LEN
@@ -60,15 +63,7 @@ program main
 
     elapsed = (t2-t1) / rate
 
-    print '("   - Took "D"s to fill the original array of size "I0" bytes ("I0" items).")', elapsed, LEN*8, LEN
-
-    print '("   - Saving a copy of the array...")'
-
-    do i = 1, LEN
-        original_saved(i)=original(i)
-    end do
-
-    print '(" - [COMPRESSION]")'
+    print '(" [INIT] Generated the original array of size "I0" bytes ("I0" items)  in "D"s .")', LEN*8, LEN, elapsed
 
     pOriginal = c_loc(original)
     field = zFORp_field_1d(pOriginal, zFORp_type_double, INT(LEN))
@@ -77,8 +72,6 @@ program main
     stream = zFORp_stream_open(bitstream)
     res    = zFORp_stream_set_accuracy(stream, accuracy)
     MAX_SIZE_compressed = zFORp_stream_maximum_size(stream, field)
-
-    print '("   - Compressed size will be smaller than or equal to "I0" bytes ("I0" items eq.).")', MAX_SIZE_compressed, MAX_SIZE_compressed / 8
 
     ! Create Bistream & Allocate Bistream buffer
     allocate(compressed(MAX_SIZE_compressed))
@@ -92,41 +85,40 @@ program main
     call zFORp_stream_rewind(stream)
 
     call system_clock(t1)
-        SIZE_compressed = zFORp_compress(stream, field)
+        stream_offset   = zFORp_compress(stream, field)
+        SIZE_compressed = stream_offset
     call system_clock(t2)
 
     elapsed = t2 - t1
 
-    print '("   - Took "D"s to compress to "I0" bytes ("I0" items eq.).")', elapsed, SIZE_compressed, SIZE_compressed / 8
-    
-    compression_ratio = (LEN*8) / SIZE_compressed
-    print '("   - Effective compression ratio of "D"")', compression_ratio
+    print '(" [ZFPE] Compressed to "I0" bytes ("I0" items eq.) in "D"s.")', SIZE_compressed, SIZE_compressed / 8, elapsed
 
-    print '(" - [DECOMPRESSION]")'
-    print '("   - Clearing the original array")'
-    do i = 1, LEN
-        original(i)=0
-    end do
+    compression_ratio = (LEN*8) / SIZE_compressed
+    print '(" [ZFPE] Effective compression ratio of "D"")', compression_ratio
+
+    allocate(uncompressed(LEN))
+    pUncompressed = c_loc(uncompressed)
+
+    field = zFORp_field_1d(pUncompressed, zFORp_type_double, INT(LEN))
 
     call zFORp_stream_rewind(stream)
 
     call system_clock(t1)
-        SIZE_decompressed = zFORp_decompress(stream, field)
-    call system_clock(t2)    
+        stream_offset = zFORp_decompress(stream, field)
+    call system_clock(t2)
 
     elapsed = t2 - t1
 
-    print '("   - Took "D"s to decompress to "I0" bytes ("I0" items).")', elapsed, SIZE_decompressed, SIZE_decompressed / 8
+    print '(" [ZFPD] Decompressed to "I0" bytes ("I0" items) in "D"s.")', LEN*8, LEN, elapsed
 
-    print '(" - [CHECK INTEGRITY]")'
-    print '("   - Compression and decompression were successful.")'
-    print '("   - Error:")'
-
-    if (SIZE_compressed .ne. SIZE_decompressed) then
-        print *, "  - Fatal error: The input array and decompressed arrays have different lengths."
+    if (SIZE_compressed .ne. stream_offset) then
+        print '(" [INTE] Failure during .")'
+        stop 1
     end if
 
-    PRINT *, original - original_saved
+    print '(" [INTE] Success.")'
+
+    PRINT *, original - uncompressed
 
     !zfp_stream_set_execution()
     !zfp_stream_open(NULL);
