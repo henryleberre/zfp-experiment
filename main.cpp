@@ -22,7 +22,7 @@ void test_engine(zfp_exec_policy policy) {
 
     for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e3; LEN*=10) {
         printf("%s LEN %d\n", "omp.dat", LEN);
-        for (double ACC = 1e-1; ACC > 1e-10; ACC /= 10) {
+        for (double RATE = 1e-1; RATE <= 1.0; RATE += 2e-1) {
 
             const std::size_t original_size = sizeof(double)*LEN;
             double * const pOrignal = reinterpret_cast<double*>(std::malloc(original_size));
@@ -39,11 +39,9 @@ void test_engine(zfp_exec_policy policy) {
                 return;
             }
 
-            zfp_stream_set_rate(stream, 1, zfp_type_double, 1, false);
+            zfp_stream_set_rate(stream, RATE, zfp_type_double, 1, false);
 
             zfp_field * const field  = zfp_field_1d(pOrignal, zfp_type_double, LEN);
-
-            zfp_stream_set_accuracy(stream, ACC);
 
             const std::uint32_t MAX_SIZE_compressed = zfp_stream_maximum_size(stream, field);
 
@@ -69,7 +67,7 @@ void test_engine(zfp_exec_policy policy) {
             }
 
             const double elapsed =  std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1).count();
-            std::fprintf(fp, "%d, %.10f, %.10f, %.10f\n", LEN, ACC, elapsed, original_size / (float)zfpsize);
+            std::fprintf(fp, "%d, %.10f, %.10f, %.10f\n", LEN, RATE, elapsed, original_size / (float)zfpsize);
         }
     }
 
