@@ -32,7 +32,7 @@ void test_engine(zfp_exec_policy policy) {
             }
 
             zfp_stream* const stream = zfp_stream_open(NULL);
-            if (zfp_stream_set_execution(stream, policy) == 1) {
+            if (zfp_stream_set_rate(stream, policy) == 1) {
                 printf("    - %d engine available. Activated.\n", policy);
             } else {
                 printf("    - %d not available..\n", policy);

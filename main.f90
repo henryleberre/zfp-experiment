@@ -26,7 +26,7 @@ program main
     integer (kind=8) :: MAX_SIZE_compressed, SIZE_compressed
     integer(c_size_t) :: stream_offset
     real*8 :: compression_ratio
-    real (kind=8) :: actual_tol
+    real (kind=8) :: actual_rate
 
     integer(c_int), dimension(3) :: POLICIES = (/ zFORp_exec_serial, zFORp_exec_omp, zFORp_exec_cuda /)
 
@@ -79,8 +79,8 @@ program main
             !bitstream%object = c_null_ptr
             stream = zFORp_stream_open(bitstream)
 
-            actual_tol = zFORp_stream_set_accuracy(stream, accuracy)
-            print '(" [INIT] Selected tolerance: "D".")', actual_tol
+            actual_rate = zFORp_stream_set_rate(stream, 1, 1, .false.)
+            print '(" [INIT] Selected rate: "D".")', actual_rate
 
             MAX_SIZE_compressed = zFORp_stream_maximum_size(stream, field)
             print '(" [INIT] Max compressed size: "I0" bytes ("I0" items eq.).)")', MAX_SIZE_compressed, MAX_SIZE_compressed / 8
