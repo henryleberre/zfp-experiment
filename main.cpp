@@ -13,8 +13,14 @@
 
 #define BENCH
 
-void test_engine() {
-    for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e8; LEN*=10) {
+void test_engine(zfp_exec_policy policy) {
+        FILE* fp = std::fopen("omp.dat", "w");
+
+    std::uniform_real_distribution<double> unif(0,1);
+    std::default_random_engine re;
+
+
+    for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e3; LEN*=10) {
         printf("%s LEN %d\n", "omp.dat", LEN);
         for (double ACC = 1e-1; ACC > 1e-10; ACC /= 10) {
 
@@ -25,8 +31,15 @@ void test_engine() {
                 pOrignal[i] = unif(re);
             }
 
-            zfp_field * const field  = zfp_field_1d(pOrignal, zfp_type_double, LEN);
             zfp_stream* const stream = zfp_stream_open(NULL);
+            if (zfp_stream_set_execution(stream, policy) == 1) {
+                printf("    - %d engine available. Activated.\n", policy);
+            } else {
+                printf("    - %d not available..\n", policy);
+                return;
+            }
+
+            zfp_field * const field  = zfp_field_1d(pOrignal, zfp_type_double, LEN);
 
             zfp_stream_set_accuracy(stream, ACC);
 
@@ -39,9 +52,7 @@ void test_engine() {
             zfp_stream_set_bit_stream(stream, bits);
             zfp_stream_rewind(stream);
 
-            if (zfp_stream_set_execution(stream, zfp_exec_omp)) {
-                printf("    - OpenMP engine available. Activated.\n");
-            }
+
 
 
             auto t1 = std::chrono::high_resolution_clock::now();
@@ -52,7 +63,7 @@ void test_engine() {
 
             if (!zfpsize) {
                 std::printf("    -> Fatal error: Failed to compress.\n");
-                return -1;
+                return;
             }
 
             const double elapsed =  std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1).count();
@@ -65,11 +76,9 @@ void test_engine() {
 
 int main(int argc, char** argv) {
 
-    FILE* fp = std::fopen("omp.dat", "w");
-
-    std::uniform_real_distribution<double> unif(0,1);
-    std::default_random_engine re;
-
+    test_engine(zfp_exec_serial);
+    test_engine(zfp_exec_omp);
+    test_engine(zfp_exec_cuda);
 
 
     return 0;
