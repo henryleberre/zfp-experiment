@@ -55,17 +55,9 @@ program main
 
     do i = 1, size(POLICIES)
 
-        !bitstream%object = c_null_ptr
-        stream = zFORp_stream_open(bitstream)
-        if (zFORp_stream_set_execution(stream, POLICIES(i)) .eq. 0) then
-            print '(" [INIT] ZFP Execution Policy "I0" Unsupported.")', POLICIES(i)
-            !cycle
-        end if
-
-        print '(" [INIT] ZFP Execution Policy "I0" Activated.")', POLICIES(i)
-
         LEN = 10
         do while(LEN .le. 1000000)
+
             ! Create & Insert data into the buffer to be compressed
             call system_clock(t1)
                 allocate(original(LEN))
@@ -84,6 +76,9 @@ program main
             pOriginal = c_loc(original)
             field = zFORp_field_1d(pOriginal, zFORp_type_double, INT(LEN))
 
+            !bitstream%object = c_null_ptr
+            stream = zFORp_stream_open(bitstream)
+
             actual_tol = zFORp_stream_set_accuracy(stream, accuracy)
             print '(" [INIT] Selected tolerance: "D".")', actual_tol
 
@@ -94,12 +89,22 @@ program main
             allocate(compressed(MAX_SIZE_compressed))
             pCompressed = c_loc(compressed)
 
+            print '(" [INIT] Allocated compressed buffer.")'
+
             bitstream = zFORp_bitstream_stream_open(pCompressed, MAX_SIZE_compressed)
             call zFORp_stream_set_bit_stream(stream, bitstream)
+            call zFORp_stream_rewind(stream)
+
+            if (zFORp_stream_set_execution(stream, POLICIES(i)) .eq. 0) then
+                print '(" [INIT] ZFP Execution Policy "I0" Unsupported.")', POLICIES(i)
+                deallocate(original)
+                deallocate(compressed)
+                cycle
+            end if
+
+            print '(" [INIT] ZFP Execution Policy "I0" Activated.")', POLICIES(i)
 
             !!$acc data copy(original)
-
-            call zFORp_stream_rewind(stream)
 
             call system_clock(t1)
                 stream_offset   = zFORp_compress(stream, field)
@@ -140,7 +145,7 @@ program main
             !PRINT *, original - uncompressed
 
             ! Save results
-            write (42, '(I3" "I10" "I10" "ES10.4E0" "ES10.4E0)'), POLICIES(i), LEN*8, SIZE_compressed, elapsed_compression, elapsed_decompression
+            write (42, '(I3" "I10" "I10" "ES10.4E0" "ES10.4E0:)'), POLICIES(i), LEN*8, SIZE_compressed, elapsed_compression, elapsed_decompression
 
             ! Deallocate temporary ZFP buffers
             deallocate(original)
