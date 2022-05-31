@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-POLICY = 1
+POLICY = 2
 
 fig = plt.figure(figsize=(10,10))
 
 ax = fig.add_subplot(1,1,1, projection='3d')
-ax.set_title(f"ZFP Benchmark Time (OpenMP)")
+ax.set_title(f"ZFP Benchmark Time (Cuda)")
 ax.set_xlabel("(in) Buffer size (# doubles)")
 ax.set_ylabel("(in) Rate")
 ax.set_zlabel("Compression time (s)")
