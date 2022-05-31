@@ -24,13 +24,12 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
     for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e7; LEN*=10) {
         printf("LEN %d\n", LEN);
 
+        const std::size_t original_size = sizeof(double)*LEN;
+        double * const pOriginalCPU = reinterpret_cast<double*>(std::malloc(original_size));
 
-            const std::size_t original_size = sizeof(double)*LEN;
-            double * const pOriginalCPU = reinterpret_cast<double*>(std::malloc(original_size));
-
-            for (std::uint32_t i = 0; i < LEN; ++i) {
-                pOriginalCPU[i] = unif(re);
-            }
+        for (std::uint32_t i = 0; i < LEN; ++i) {
+            pOriginalCPU[i] = unif(re);
+        }
 
 	    double* pOriginalGPU = nullptr;
 	    cudaMalloc(&pOriginalGPU, original_size);
@@ -38,13 +37,13 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
 
 	    std::free(pOriginalCPU);
 
-            zfp_stream* const stream = zfp_stream_open(NULL);
-            if (zfp_stream_set_execution(stream, policy)) {
-                printf("    - %d %d engine available. Activated.\n", policy, LEN);
-            } else {
-                printf("    - %d not available..\n", policy);
-                return;
-            }
+        zfp_stream* const stream = zfp_stream_open(NULL);
+        if (zfp_stream_set_execution(stream, policy)) {
+            printf("    - %d %d engine available. Activated.\n", policy, LEN);
+        } else {
+            printf("    - %d not available..\n", policy);
+            std::exit(-1);
+        }
 
         for (double RATE = 0.01; RATE <= 10; RATE += 0.5) {
             const double actual_rate = zfp_stream_set_rate(stream, RATE, zfp_type_double, 1, false);
@@ -54,7 +53,7 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
             const std::uint32_t MAX_SIZE_compressed = zfp_stream_maximum_size(stream, field);
 
             double * const pCompressedGPU = nullptr;
-	    cudaMalloc((void**)&pCompressedGPU, MAX_SIZE_compressed);
+	        cudaMalloc((void**)&pCompressedGPU, MAX_SIZE_compressed);
 
             bitstream* bits = stream_open(pCompressedGPU, MAX_SIZE_compressed);
 
@@ -74,10 +73,12 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
             const double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1).count();
             std::fprintf(fp, "%d, %d, %.10f, %d, %d, %.10f, %.10f, %.10f\n", (int)policy, LEN, RATE, LEN*8, zfpsize, actual_rate, elapsed, original_size / (float)zfpsize);
             
-	    cudaFree((void*)pCompressedGPU);
-	}
-	
-	cudaFree((void*)pOriginalGPU);
+	        cudaFree((void*)pCompressedGPU);
+            zfp_field_free(field);
+        }
+    
+    	cudaFree((void*)pOriginalGPU);
+        zfp_stream_close(stream);
     }
 }
 
