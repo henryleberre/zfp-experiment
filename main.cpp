@@ -20,7 +20,7 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
     for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e7; LEN*=10) {
         printf("%s LEN %d\n", "omp.dat", LEN);
 
-        for (double RATE = 1e-1; RATE <= 1.0; RATE += 5e-2) {
+        for (double RATE = 1e-2; RATE <= 1.0; RATE += 2e-1) {
 
             const std::size_t original_size = sizeof(double)*LEN;
             double * const pOrignal = reinterpret_cast<double*>(std::malloc(original_size));
@@ -61,7 +61,7 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
             }
 
             const double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1).count();
-            std::fprintf(fp, "%d, %d, %.10f, %d, %d, %.10f, %.10f, %.10f\n", (int)policy, LEN, RATE, LEN*8, zfpsize*8, actual_rate, elapsed, original_size / (float)zfpsize);
+            std::fprintf(fp, "%d, %d, %.10f, %d, %d, %.10f, %.10f, %.10f\n", (int)policy, LEN, RATE, LEN*8, zfpsize, actual_rate, elapsed, original_size / (float)zfpsize);
             
 	    std::free(pOrignal);
 	    std::free(pCompressed);
