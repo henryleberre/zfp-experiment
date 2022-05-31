@@ -20,7 +20,7 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
     for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e7; LEN*=10) {
         printf("%s LEN %d\n", "omp.dat", LEN);
 
-        for (double RATE = 1e-2; RATE <= 1.0; RATE += 2e-1) {
+        for (double RATE = 1e-1; RATE <= 1e1; RATE += 2e-1) {
 
             const std::size_t original_size = sizeof(double)*LEN;
             double * const pOrignal = reinterpret_cast<double*>(std::malloc(original_size));
