@@ -21,7 +21,7 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
     std::uniform_real_distribution<double> unif(0,1);
     std::default_random_engine re;
 
-    for (std::uint32_t LEN = 1; LEN < (std::uint32_t)10e7; LEN*=10) {
+    for (std::uint32_t LEN = 100; LEN < (std::uint32_t)10e7; LEN*=10) {
         printf("LEN %d\n", LEN);
 
         const std::size_t original_size = sizeof(double)*LEN;
@@ -53,7 +53,8 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
             const std::uint32_t MAX_SIZE_compressed = zfp_stream_maximum_size(stream, field);
 
             double * const pCompressedGPU = nullptr;
-	        cudaMalloc((void**)&pCompressedGPU, MAX_SIZE_compressed);
+	        printf("%d", (int)cudaMalloc((void**)&pCompressedGPU, MAX_SIZE_compressed));
+
 
             bitstream* bits = stream_open(pCompressedGPU, MAX_SIZE_compressed);
 
@@ -67,7 +68,7 @@ void test_engine(FILE* fp, zfp_exec_policy policy) {
             auto t2 = std::chrono::high_resolution_clock::now();
 
             if (!zfpsize) {
-                std::printf("    -> Fatal error: Failed to compress.\n");
+                std::printf("    -> Fatal error: Failed to compress (%d).\n", (int)zfpsize);
             }
 
             const double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1).count();
