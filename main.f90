@@ -54,7 +54,7 @@ program main
     open (unit=42, file="benchmark.dat", action='write',status='replace')
 
     do i = 1, size(POLICIES)
-
+        i = 3
         LEN = 10
         do while(LEN .le. 1000000)
 
